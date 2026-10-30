@@ -432,7 +432,7 @@ with `client.complete(step_id, outcome, claimed_changes)`. Pass the resulting co
 `--agent-cmd`. The agent gets the tool schemas in the `task` message and never sees the policy or
 the assertions.
 
-## What the MVP enforces
+## What Assure enforces
 
 | Control | Type | Status |
 |---|---|---|
