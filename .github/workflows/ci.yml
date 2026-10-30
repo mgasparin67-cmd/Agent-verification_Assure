@@ -1,0 +1,37 @@
+# Offline checks on every push and pull request. No API key and no model calls: mock agents, the
+# local fake Messages API, and the SDK-based MCP agent cover every verdict path.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: python -m pip install -e '.[test,claude,mcp]'
+      - name: Tests (scenarios, gateway, bench, MCP, bridge against a fake API)
+        run: python -m pytest -q
+      - name: Every suite discriminates (reference agents get the verdicts they must)
+        run: |
+          for suite in suites/*.yaml; do
+            assure check-suite --suite "$(basename "$suite" .yaml)" --runs-dir "$RUNNER_TEMP/check"
+          done
+      - name: Generated long-task specs are up to date
+        run: |
+          python specs/long/build.py
+          git diff --exit-code -- fixtures/customers_v3 specs/long

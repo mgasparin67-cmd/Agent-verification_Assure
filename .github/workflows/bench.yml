@@ -1,0 +1,71 @@
+# Live benchmark, started by hand (Actions -> bench -> Run workflow). Makes paid API calls with the
+# ANTHROPIC_API_KEY repository secret. The key reaches only the agent process and is redacted from
+# all evidence; the uploaded results contain no key.
+name: bench
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Suite (suites/<name>.yaml)"
+        default: customer-long
+        required: true
+      models:
+        description: "Comma-separated Claude models; the first is the baseline"
+        default: claude-opus-5-5,claude-sonnet-5-5
+        required: true
+      repeat:
+        description: "Runs per model per task"
+        default: "5"
+        required: true
+      min_pass_rate:
+        description: "Fail the job if any model is below this pass rate (0-1); empty for none"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e '.[claude]'
+      - name: Check the suite first
+        env:
+          SUITE: ${{ inputs.suite }}  # inputs go through env, never into the script text
+        run: assure check-suite --suite "$SUITE" --runs-dir "$RUNNER_TEMP/check"
+      - name: Run the benchmark
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUITE: ${{ inputs.suite }}
+          MODELS: ${{ inputs.models }}
+          REPEAT: ${{ inputs.repeat }}
+          MIN_PASS_RATE: ${{ inputs.min_pass_rate }}
+        run: |
+          set -o pipefail
+          args=(bench --suite "$SUITE" --models "$MODELS" --repeat "$REPEAT" --jobs 3 --runs-dir runs)
+          if [ -n "$MIN_PASS_RATE" ]; then args+=(--min-pass-rate "$MIN_PASS_RATE"); fi
+          assure "${args[@]}" | tee bench-summary.txt
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f bench-summary.txt ]; then
+            { echo '```'; cat bench-summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload results and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-${{ inputs.suite }}-${{ github.run_id }}
+          path: |
+            runs/bench-*/bench.json
+            runs/bench-*/runs/*/evidence
+            bench-summary.txt
+          retention-days: 30

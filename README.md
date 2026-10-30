@@ -9,6 +9,20 @@ never decide a result.
 Read [DESIGN.md](DESIGN.md) for the assessment, architecture, trust boundaries, schemas, and
 aggregation rules.
 
+## Continuous integration
+
+- **`.github/workflows/ci.yml`** runs on every push and pull request, on Python 3.11 and 3.12, with no
+  API key and no model calls. It runs the full test suite (mock agents, the bridge against a local
+  fake API, and the SDK-based MCP agent), runs `check-suite` on every file in `suites/`, and checks
+  that the generated long-task specs match `specs/long/build.py`. A change that breaks a verdict, or
+  makes a task stop telling right from wrong, fails the build.
+- **`.github/workflows/bench.yml`** is a live benchmark you start by hand: Actions, then bench, then
+  Run workflow. Choose the suite, models, repeats and an optional minimum pass rate. It needs an
+  `ANTHROPIC_API_KEY` repository secret and makes paid calls. The job fails on a significant
+  regression against the first model, or on a pass rate below the minimum. The summary appears on
+  the run page, and `bench.json` plus each run's evidence are uploaded as an artifact for 30 days.
+  The key is redacted from all evidence.
+
 ## Setup
 
 ```bash
