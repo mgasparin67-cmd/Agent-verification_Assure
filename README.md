@@ -292,6 +292,53 @@ INCONCLUSIVE does not count, because the task has to produce a definite failure.
 The test suite runs `check-suite` on every file in `suites/`. A task whose assertions or policy
 cannot tell the right behaviour from the wrong one cannot be merged.
 
+## Testing any MCP agent
+
+An agent that speaks MCP can be tested without writing an adapter. The MCP adapter
+([assure/agents/mcp_adapter.py](assure/agents/mcp_adapter.py)) runs in place of the agent. It
+serves the gateway's tools, plus `report_completion`, as an MCP server on `127.0.0.1` behind a
+random bearer token, and then launches your agent pointed at that server. Every MCP `tools/call`
+goes through the gateway: the same policy checks, evidence, assertions and verdicts as the stdio
+path.
+
+Describe the agent in `agents/<name>.yaml`:
+
+```yaml
+agent: my-agent
+command: ["/abs/path/my-agent", "--task", "{prompt}", "--mcp-config", "{mcp_config}"]
+pass_env: [ANTHROPIC_API_KEY]      # host variables the agent needs; values are redacted from evidence
+```
+
+Placeholders, each replaced inside one argv element (no shell):
+- `{prompt}`: the operating instructions plus the task.
+- `{instruction}`: the task alone.
+- `{mcp_url}` and `{mcp_token}`: where to connect, and the bearer token.
+- `{mcp_config}`: a ready `{"mcpServers": {"assure": {"type": "http", ...}}}` file.
+- `{python}`: the interpreter running assure.
+
+The same values are also in the agent's environment as `ASSURE_MCP_URL`, `ASSURE_MCP_TOKEN` and
+`ASSURE_MCP_CONFIG`. Then:
+
+```bash
+.venv/bin/assure bench --suite customer-hard --agent mcp:my-agent --repeat 5
+```
+
+- **Final claim.** It is the agent's own `report_completion` call, checked against the schema. A
+  malformed report goes back to the agent as a tool error so it can correct it. An agent that exits
+  without reporting gets no final claim, and the run is INCONCLUSIVE, not PASS.
+- **Protocol.** The handshake protocol (`initialize`, `tools/list`, `tools/call`, `ping`), versions
+  2024-11-05 to 2025-11-25, over Streamable HTTP with JSON responses. It is implemented with no SDK
+  dependency. `tests/test_mcp.py` drives it with the official MCP Python SDK client, including the
+  SDK's probe for the newer stateless protocol and its fallback to the handshake.
+- **Isolation.** MCP agents run in local mode only. The agent's stdout and stderr are captured as
+  `agent_stderr.log` and never reach the gateway channel.
+- **Profiles.** `agents/mock-mcp.yaml` is a deterministic SDK-based agent (`pip install
+  'assure[mcp]'`). `agents/claude-code.yaml` runs Claude Code headless with its built-in tools
+  disabled. It is **unverified**: the CLI was not installed where it was written, so check its flags
+  against `claude --help`. A built-in tool left enabled could bypass the gateway in local mode;
+  `boundary.unattributed_change` would report any such change after the fact, but nothing would
+  prevent it.
+
 ## Connecting other agents
 
 The interface is the stdio JSON-lines protocol documented in [assure/adapter.py](assure/adapter.py).

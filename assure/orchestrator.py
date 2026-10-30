@@ -72,7 +72,7 @@ class ToolFault(Strict):
 
 
 class AgentSpec(Strict):
-    kind: Literal["mock", "command", "claude"]
+    kind: Literal["mock", "command", "claude", "mcp"]  # mcp: `command` is the MCP agent's command template
     behavior: str | None = None
     command: list[str] | None = None
     model: str | None = None
@@ -106,7 +106,11 @@ def agent_argv(spec: AgentSpec, isolation: str = "local") -> list[str]:
             raise ValueError("the Claude bridge needs network egress; docker mode runs with --network none")
         return [sys.executable, "-I", "-m", "assure.agents.claude_agent", *model]
     if not spec.command:
-        raise ValueError("command agent requires 'command'")
+        raise ValueError(f"{spec.kind} agent requires 'command'")
+    if spec.kind == "mcp":
+        if isolation == "docker":
+            raise ValueError("MCP agents run in local mode only for now")
+        return [sys.executable, "-I", "-m", "assure.agents.mcp_adapter", "--", *spec.command]
     return list(spec.command)
 
 

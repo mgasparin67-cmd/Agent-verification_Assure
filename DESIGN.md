@@ -88,6 +88,13 @@ Boundary controls:
 | Process quiesce | `docker kill` | `killpg(SIGKILL)` on own session |
 | Path confinement in tools | realpath + commonpath + glob allowlist (both modes) | same |
 
+MCP agents: the MCP adapter runs on the untrusted side, in place of the agent. It talks to the
+gateway over the stdio protocol and serves MCP over HTTP on loopback to the real agent, which it
+starts as its own child, so the orchestrator's kill of the process group stops both. It emits
+per-step events mechanically from gateway responses. The final claim is the agent's own
+`report_completion` call. The bearer token and the Origin check keep other local web content from
+calling the endpoint. They are not a boundary against local processes: in local mode, nothing is.
+
 ## 3. Event schema (`assure.event/v1`)
 
 Two record types share the envelope; they are never merged.

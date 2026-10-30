@@ -1,0 +1,5 @@
+# A deterministic MCP agent built on the official MCP Python SDK client (needs `assure[mcp]`).
+# Use it to check the MCP path end to end without a model: --agent mcp:mock-mcp
+agent: mock-mcp
+description: "SDK-based MCP client that reactivates customer 3 and reports it."
+command: ["{python}", "-I", "-m", "assure.agents.mcp_mock", "--url", "{mcp_url}", "--token", "{mcp_token}", "--behavior", "correct"]

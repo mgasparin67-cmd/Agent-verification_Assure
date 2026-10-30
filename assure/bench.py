@@ -78,14 +78,33 @@ class Agent:
     pass_env: list[str] = field(default_factory=list)
 
 
-def parse_agent(text: str) -> Agent:
-    """`claude:<model>` or `mock:<behavior>`."""
+class AgentProfile(Strict):
+    """agents/<name>.yaml: an MCP agent to test, as a command template plus the host variables it needs."""
+
+    agent: str
+    description: str = ""
+    command: list[str] = Field(min_length=1)
+    pass_env: list[str] = []
+
+
+def load_profile(project: Path, name: str) -> AgentProfile:
+    path = project / "agents" / f"{name}.yaml"
+    if not path.exists():
+        raise ValueError(f"unknown MCP agent profile '{name}' ({path})")
+    return AgentProfile.model_validate(yaml.safe_load(path.read_text()))
+
+
+def parse_agent(text: str, project: Path | None = None) -> Agent:
+    """`claude:<model>`, `mock:<behavior>`, or `mcp:<profile>` (agents/<profile>.yaml)."""
     kind, _, arg = text.partition(":")
     if kind == "claude" and arg:
         return Agent(text, AgentSpec(kind="claude", model=arg), ["ANTHROPIC_API_KEY"])
     if kind == "mock" and arg:
         return Agent(text, AgentSpec(kind="mock", behavior=arg))
-    raise ValueError(f"agent '{text}': expected claude:<model> or mock:<behavior>")
+    if kind == "mcp" and arg and project is not None:
+        prof = load_profile(project, arg)
+        return Agent(text, AgentSpec(kind="mcp", command=prof.command), list(prof.pass_env))
+    raise ValueError(f"agent '{text}': expected claude:<model>, mock:<behavior> or mcp:<profile>")
 
 
 # --------------------------------------------------------------------------- statistics

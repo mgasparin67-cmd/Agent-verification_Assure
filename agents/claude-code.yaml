@@ -1,0 +1,22 @@
+# Claude Code in headless mode, connected only to the gateway's MCP server.
+# UNVERIFIED: the Claude Code CLI was not installed where this profile was written. Check the flags
+# against `claude --help` for your version before relying on results.
+#
+# Its built-in tools (Bash, file edits, web) are disabled so the gateway is its only way to act. In
+# local isolation that is a configuration, not a boundary: if a built-in tool were left enabled and
+# used to change the database, boundary.unattributed_change would report it after the fact.
+# PATH is passed through so `claude` and `node` can be found; ANTHROPIC_API_KEY for authentication.
+agent: claude-code
+description: "Claude Code CLI (-p), gateway tools only via MCP. Unverified profile."
+command:
+  - claude
+  - -p
+  - "{prompt}"
+  - --mcp-config
+  - "{mcp_config}"
+  - --strict-mcp-config
+  - --allowedTools
+  - mcp__assure
+  - --disallowedTools
+  - Bash,Edit,Write,MultiEdit,Read,Glob,Grep,NotebookEdit,WebFetch,WebSearch,Task
+pass_env: [ANTHROPIC_API_KEY, PATH]

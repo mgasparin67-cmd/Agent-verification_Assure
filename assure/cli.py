@@ -56,7 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     b = sub.add_parser("bench", help="run a task suite N times per agent and compare agents")
     b.add_argument("--suite", required=True, help="suite name (suites/<name>.yaml)")
     b.add_argument("--agent", action="append", default=[], metavar="SPEC",
-                   help="claude:<model> or mock:<behavior> (repeatable; the first is the baseline)")
+                   help="claude:<model>, mock:<behavior> or mcp:<profile> from agents/ "
+                        "(repeatable; the first is the baseline)")
     b.add_argument("--models", help="shorthand: comma-separated Claude models, e.g. claude-opus-5-5,claude-sonnet-5-5")
     b.add_argument("--repeat", type=int, default=5, help="runs per agent per task (default 5)")
     b.add_argument("--jobs", type=int, default=1, help="runs in parallel (separate processes)")
@@ -149,7 +150,7 @@ def _bench(a, ap, project: Path) -> int:
     if a.repeat < 1 or a.jobs < 1:
         ap.error("--repeat and --jobs must be at least 1")
     try:
-        agents = [parse_agent(s) for s in specs]
+        agents = [parse_agent(s, project) for s in specs]
         suite = load_suite(project, a.suite)
     except (ValueError, FileNotFoundError) as e:
         ap.error(str(e))
