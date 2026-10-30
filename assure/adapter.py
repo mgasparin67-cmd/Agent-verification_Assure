@@ -70,11 +70,18 @@ class GatewayClient:
 
     def report_step(self, step_id: str, tool: str, arguments: dict[str, Any], response: dict[str, Any],
                     outcome: str, status: str | None = None, parent_step_id: str | None = None) -> None:
-        """Emit the per-step claim for a tool call. status defaults to what the gateway returned."""
+        """Emit the per-step claim for a tool call. status defaults to what the gateway returned.
+
+        The gateway's "invalid" (well-formed request that could not run, e.g. reading a directory)
+        has no claim status of its own; it is reported as "failed", which the trajectory evaluator
+        treats as compatible with "invalid".
+        """
+        if status is None:
+            status = {"invalid": "failed"}.get(response.get("status"), response.get("status", "unknown"))
         self.emit({"schema_version": SCHEMA, "source": "agent", "run_id": self.run_id, "seq": self.next_seq(),
                    "event_id": uuid.uuid4().hex, "step_id": step_id, "parent_step_id": parent_step_id,
                    "action_type": "tool_call", "tool": tool, "call_id": response.get("call_id"),
-                   "arguments": arguments, "claim": {"status": status or response.get("status", "unknown"),
+                   "arguments": arguments, "claim": {"status": status,
                                                      "outcome": outcome}})
 
     def complete(self, step_id: str, outcome: str, claimed_changes: list[dict[str, Any]],

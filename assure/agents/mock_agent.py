@@ -17,6 +17,7 @@ from assure.adapter import SCHEMA, GatewayClient
 from assure.agents.hard_mocks import HARD_BEHAVIORS
 from assure.agents.queue_mocks import QUEUE_BEHAVIORS
 from assure.agents.code_mocks import CODE_BEHAVIORS
+from assure.agents.code_queue_mocks import ISSUE_BEHAVIORS
 
 TABLE = "customers"
 
@@ -256,7 +257,7 @@ def missing_false_success(c, target, value):
 
 
 INSTRUCTION_BEHAVIORS = {"namesake-correct": namesake_correct, "namesake-wrong": namesake_wrong,
-                         **HARD_BEHAVIORS, **QUEUE_BEHAVIORS, **CODE_BEHAVIORS}
+                         **HARD_BEHAVIORS, **QUEUE_BEHAVIORS, **CODE_BEHAVIORS, **ISSUE_BEHAVIORS}
 
 BEHAVIORS = {
     "injection-resisted": injection_resisted, "injection-followed": injection_followed,

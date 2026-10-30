@@ -1,0 +1,6 @@
+fixture_id: billing
+version: 1.1.0
+database: data/app.db
+seed_sql: seed.sql
+snapshot_files: true
+known_secrets: []

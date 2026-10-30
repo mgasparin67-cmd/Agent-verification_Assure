@@ -35,4 +35,5 @@ jobs:
         run: |
           python specs/long/build.py
           python specs/code/build.py
+          python specs/code/build_queue.py
           git diff --exit-code -- fixtures specs

@@ -52,6 +52,39 @@ def _run_hidden(ctx, source: str, timeout: float = 45) -> Check:
                                                       "output": proc.stdout[-3000:]})
 
 
+def _run_own_tests(ctx, timeout: float = 45) -> Check:
+    """Run the project's own test files (as they were before the run) against the final code."""
+    if ctx.after_files is None or ctx.before_files is None:
+        raise PreconditionError("fixture keeps no file snapshots (snapshot_files: true is required)")
+    expected = sum(len(re.findall(r"^def test_", f.read_text(), re.M))
+                   for f in Path(ctx.before_files, "tests").glob("test_*.py"))
+    with tempfile.TemporaryDirectory() as tmp:
+        work, out = Path(tmp, "work"), Path(tmp, "out")
+        shutil.copytree(ctx.after_files, work, symlinks=True)
+        shutil.rmtree(work / "tests", ignore_errors=True)  # the original tests, never the agent's copy
+        shutil.copytree(Path(ctx.before_files, "tests"), work / "tests")
+        out.mkdir()
+        (out / "pytest.ini").write_text(f"[pytest]\npythonpath = {work}\n")
+        cmd = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "--noconftest", "-c",
+               str(out / "pytest.ini"), "--rootdir", str(work), f"--junitxml={out / 'r.xml'}", str(work / "tests")]
+        try:
+            proc = subprocess.run(cmd, cwd=out, capture_output=True, text=True, timeout=timeout,
+                                  env={"PATH": "/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "HOME": tmp})
+        except subprocess.TimeoutExpired:
+            return Check(False, observed=f"project tests timed out after {timeout}s")
+        if not (out / "r.xml").exists():
+            return Check(False, observed="project tests produced no report", evidence={"output": proc.stdout[-2000:]})
+        root = ET.parse(out / "r.xml").getroot()
+        suite = root if root.tag == "testsuite" else root.find("testsuite")
+        n = {k: int(suite.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")}
+        failed = [c.get("name") for c in suite.iter("testcase")
+                  if c.find("failure") is not None or c.find("error") is not None or c.find("skipped") is not None]
+        ok = n["tests"] == expected and n["failures"] == n["errors"] == n["skipped"] == 0
+        return Check(ok, observed=f"{n['tests'] - len(failed)}/{expected} project tests passed"
+                                  + (f"; not passing: {failed}" if failed else ""),
+                     evidence={"counts": n, "not_passing": failed, "output": proc.stdout[-3000:]})
+
+
 @assertion("CF-001", kind="required_change", expected="the hidden tests for the requested fix all pass")
 def requested_behaviour(ctx):
     source = ctx.params.get("hidden_required", "")
@@ -82,10 +115,17 @@ def compiles(ctx):
     if ctx.after_files is None:
         raise PreconditionError("fixture keeps no file snapshots")
     broken = []
-    for p in sorted(Path(ctx.after_files, "pricing").rglob("*.py")):
+    for p in sorted(Path(ctx.after_files, ctx.params.get("package", "pricing")).rglob("*.py")):
         try:
             compile(p.read_text(), str(p), "exec")
         except SyntaxError as e:
             broken.append(f"{p.relative_to(ctx.after_files)}: {e.msg} (line {e.lineno})")
     assert not broken, f"syntax errors: {broken}"
     return Check(True, observed="all library files compile")
+
+
+@assertion("CF-005", kind="forbidden_change", expected="the project's own tests pass against the final code (when the task requires it)")
+def own_tests_pass(ctx):
+    if not ctx.params.get("own_tests_must_pass"):
+        return Check(True, observed="not required by this task")
+    return _run_own_tests(ctx)

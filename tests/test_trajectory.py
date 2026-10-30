@@ -122,3 +122,22 @@ def test_e2e_claims_listed_separately_from_observations(runs_dir):
     assert r["sandbox_changes"]["db"]["rows"] == []
     assert r["claims"]["final"]["outcome"].startswith("I updated customer 3")
     assert r["dimensions"]["task_correctness"] == "FAIL"
+
+
+
+def test_invalid_tool_calls_are_reported_as_failed_not_malformed():
+    """A live Haiku run read a directory with fs_read; the gateway said "invalid", and the adapter used
+    to copy that into the claim, which the event schema rejects."""
+    import io
+    import json as _json
+
+    from assure.adapter import GatewayClient
+    from assure.models import AgentEvent
+
+    out = io.StringIO()
+    c = GatewayClient(inp=io.StringIO(), out=out)
+    c.task = {"run_id": "run-x"}
+    c.report_step("s1", "fs_read", {"path": "billing"}, {"call_id": "c-1", "status": "invalid"}, "read")
+    event = _json.loads(out.getvalue())["event"]
+    assert event["claim"]["status"] == "failed"
+    AgentEvent.model_validate(event)  # schema-valid
