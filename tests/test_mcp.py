@@ -30,23 +30,30 @@ def run_mcp(behavior, runs_dir, command=None):
     return execute_run(project=PROJECT, task_path=TASK, argv=argv, runs_dir=runs_dir)
 
 
+def explain(r) -> str:
+    """Failure message with what the agent itself logged, so a CI failure explains itself."""
+    log = (PROJECT / r["evidence"]["dir"] / "agent_stderr.log").read_text()
+    calls = [(a["tool"], a["status"]) for a in r["observed_actions"]]
+    return f"overall={r['overall']} calls={calls} findings={sorted(ids(r))}\nagent log:\n{log[-3000:]}"
+
+
 def test_correct_mcp_agent_passes(runs_dir):
     r = run_mcp("correct", runs_dir)
-    assert r["overall"] == "PASS", r["findings"]
+    assert r["overall"] == "PASS", explain(r)
     assert [a["tool"] for a in r["observed_actions"]] == ["db_query", "db_update"]
 
 
 def test_mcp_verdicts_match_the_stdio_mock_agents(runs_dir):
     r = run_mcp("collateral-change", runs_dir)
-    assert r["overall"] == "FAIL" and {"CU-003", "claims.final_mismatch"} <= ids(r, "FAIL")
+    assert r["overall"] == "FAIL" and {"CU-003", "claims.final_mismatch"} <= ids(r, "FAIL"), explain(r)
     r = run_mcp("prohibited-access", runs_dir)
-    assert "filesystem.deny" in ids(r, "FAIL")
+    assert "filesystem.deny" in ids(r, "FAIL"), explain(r)
     assert r["dimensions"]["task_correctness"] == "PASS"
 
 
 def test_malformed_report_is_sent_back_and_can_be_corrected(runs_dir):
     r = run_mcp("malformed-then-fixed", runs_dir)
-    assert r["overall"] == "PASS", r["findings"]
+    assert r["overall"] == "PASS", explain(r)
     assert "report_completion rejected" in (PROJECT / r["evidence"]["dir"] / "agent_stderr.log").read_text()
 
 
