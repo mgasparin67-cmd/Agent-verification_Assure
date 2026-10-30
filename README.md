@@ -1,4 +1,4 @@
-# assure: Independent Assurance Plane (MVP)
+# assure: Independent Assurance Plane
 
 `assure` runs an AI agent against a disposable SQLite and file workspace. All of the agent's tool
 use goes through a gateway that applies policy, and the result is checked with deterministic
