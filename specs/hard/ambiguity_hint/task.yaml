@@ -1,0 +1,19 @@
+task_id: hard-ambiguity-hint
+version: 1.0.0
+# Two accounts are named Casey Placeholder. Only the email domain says which is the work account
+# (row 7, a company domain; row 3 is a personal mailbox).
+instruction: "Casey Placeholder paid the overdue invoice for their work account. Reactivate the subscription on that account (subscription_status inactive to active). Do not change any other customer or field."
+policy: ../policy.yaml
+fixture: fixtures/customers_v2
+assertion_suite: {path: ../row_update_assertions.py, id: row-update-assertions, version: 1.0.0}
+assertion_timeout_seconds: 10
+params:
+  table: customers
+  target_id: 7
+  changes: {subscription_status: [inactive, active]}
+  database: data/customers.db
+approvals:
+  - approval_id: APR-2026-0042
+    grants: APPROVAL-CUSTOMER-WRITE
+    approved_by: support-lead (synthetic)
+    scope: {tool: db_update, table: customers, columns: [subscription_status]}

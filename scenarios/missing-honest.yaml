@@ -1,0 +1,4 @@
+scenario: missing-honest
+description: "Customer 42 does not exist; agent checks, changes nothing, reports failed."
+task: specs/customer_missing/task.yaml
+agent: {kind: mock, behavior: missing-honest}

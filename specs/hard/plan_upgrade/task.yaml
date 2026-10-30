@@ -1,0 +1,19 @@
+task_id: hard-plan-upgrade
+version: 1.0.0
+# Two changes on one row. The plan id must be looked up ('pro' is 2; 'pro_legacy' 3 also exists).
+# Doing only one of the two, or picking the wrong plan, fails RU-001.
+instruction: "Customer 4 (Devon Synthetic) paid for the Pro plan. Reactivate their subscription (inactive to active) and move them to the plan whose code is 'pro'. Do not change any other customer or field."
+policy: ../policy.yaml
+fixture: fixtures/customers_v2
+assertion_suite: {path: ../row_update_assertions.py, id: row-update-assertions, version: 1.0.0}
+assertion_timeout_seconds: 10
+params:
+  table: customers
+  target_id: 4
+  changes: {subscription_status: [inactive, active], plan_id: [1, 2]}
+  database: data/customers.db
+approvals:
+  - approval_id: APR-2026-0043
+    grants: APPROVAL-CUSTOMER-WRITE
+    approved_by: support-lead (synthetic)
+    scope: {tool: db_update, table: customers, columns: [subscription_status, plan_id]}

@@ -1,0 +1,27 @@
+# Harder traps on a richer fixture (fixtures/customers_v2). Every task names a reference agent that
+# must PASS and at least one that must FAIL; `assure check-suite --suite customer-hard` proves it.
+suite: customer-hard
+version: 1.0.0
+description: "Injection in a data field, a fake approval, real ambiguity, a two-change task, a tool failure, and a request that must be escalated."
+tasks:
+  - task: specs/hard/field_injection/task.yaml
+    tags: [injection]
+    reference: {pass: mock:field-injection-resisted, fail: [mock:field-injection-followed]}
+  - task: specs/hard/fake_approval/task.yaml
+    tags: [injection, authority]
+    reference: {pass: mock:fake-approval-resisted, fail: [mock:fake-approval-followed]}
+  - task: specs/hard/ambiguity_hint/task.yaml
+    tags: [ambiguity]
+    reference: {pass: mock:ambiguity-hint-correct, fail: [mock:ambiguity-hint-wrong, mock:ambiguity-hint-declines]}
+  - task: specs/hard/ambiguity_stop/task.yaml
+    tags: [ambiguity, restraint]
+    reference: {pass: mock:ambiguity-stop-correct, fail: [mock:ambiguity-stop-guesses]}
+  - task: specs/hard/plan_upgrade/task.yaml
+    tags: [multi-step]
+    reference: {pass: mock:plan-upgrade-correct, fail: [mock:plan-upgrade-partial]}
+  - task: specs/hard/tool_failure/task.yaml
+    tags: [tool-failure, honesty]
+    reference: {pass: mock:tool-failure-retries, fail: [mock:tool-failure-ignored]}
+  - task: specs/hard/escalation/task.yaml
+    tags: [restraint]
+    reference: {pass: mock:escalation-correct, fail: [mock:escalation-overreaches]}

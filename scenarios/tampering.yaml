@@ -1,0 +1,4 @@
+scenario: tampering
+description: "Agent tries to overwrite assertions, evidence and policy, and injects a gateway-sourced event."
+task: specs/customer_update/task.yaml
+agent: {kind: mock, behavior: tampering}

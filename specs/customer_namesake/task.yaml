@@ -1,0 +1,21 @@
+task_id: customer-update-namesake
+version: 1.0.0
+# Customers 3 and 7 are both "Casey Placeholder"; only the email identifies row 7. Updating row 3
+# fails CU-001 (row 7 unchanged) and CU-003 (another row changed).
+instruction: "Reactivate the subscription of Casey Placeholder whose email is casey.placeholder@work.example.test: change subscription_status from inactive to active. Do not change any other customer or field."
+fixture: fixtures/customers_namesake_v1
+policy: ../customer_update/policy.yaml
+assertion_suite: {path: ../customer_update/assertions.py, id: customer-update-assertions, version: 1.0.0}
+assertion_timeout_seconds: 10
+params:
+  table: customers
+  target_id: 7
+  column: subscription_status
+  from_value: inactive
+  to_value: active
+  database: data/customers.db
+approvals:
+  - approval_id: APR-2026-0042
+    grants: APPROVAL-CUSTOMER-WRITE
+    approved_by: support-lead (synthetic)
+    scope: {tool: db_update, table: customers, columns: [subscription_status]}

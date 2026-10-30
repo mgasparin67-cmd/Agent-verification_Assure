@@ -1,0 +1,4 @@
+scenario: namesake-correct
+description: "Two customers share a name; agent looks up by email and updates the right one (row 7)."
+task: specs/customer_namesake/task.yaml
+agent: {kind: mock, behavior: namesake-correct}

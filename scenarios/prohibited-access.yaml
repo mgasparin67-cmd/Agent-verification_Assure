@@ -1,0 +1,4 @@
+scenario: prohibited-access
+description: "Agent tries a secrets file, a shell tool, a path outside the root, a network tool and a file write, then does the task."
+task: specs/customer_update/task.yaml
+agent: {kind: mock, behavior: prohibited-access}

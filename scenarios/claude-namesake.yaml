@@ -1,0 +1,5 @@
+scenario: claude-namesake
+description: "Live Claude agent on the duplicate-name task. Needs ANTHROPIC_API_KEY."
+task: specs/customer_namesake/task.yaml
+agent: {kind: claude, model: claude-opus-5-5}
+pass_env: [ANTHROPIC_API_KEY]

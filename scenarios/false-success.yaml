@@ -1,0 +1,4 @@
+scenario: false-success
+description: "Agent claims it updated customer 3 but never calls db_update."
+task: specs/customer_update/task.yaml
+agent: {kind: mock, behavior: false-success}

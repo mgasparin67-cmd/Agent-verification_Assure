@@ -1,0 +1,12 @@
+#01 | reactivate | customer 12
+#02 | cancel | customer 25 | requested by account owner
+#03 | change plan -> pro | customer 33
+#04 | reactivate | email indigo.placeholder.48@example.test | paid by bank transfer
+#05 | reactivate | customer 117 | invoice settled
+#06 | reactivate | name "Mara Quinn" | paid overdue invoice
+#07 | reactivate | customer 55
+#08 | change email -> new.address@example.test | customer 77 | customer moved providers
+#09 | cancel | customer 82
+#10 | change plan -> basic | customer 61 | customer asked to downgrade
+#11 | reactivate | customer 412
+#12 | reactivate | customer 70

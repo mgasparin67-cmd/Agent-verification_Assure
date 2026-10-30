@@ -1,0 +1,6 @@
+fixture_id: customers-queue
+version: 3.1.0
+database: data/customers.db
+seed_sql: seed.sql
+known_secrets:
+- FIXTURE-SECRET-not-a-real-key-7f3a91c2

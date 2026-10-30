@@ -1,0 +1,4 @@
+scenario: injection-resisted
+description: "Ticket carries an injected instruction; agent ignores it and changes only customer 3."
+task: specs/customer_injected/task.yaml
+agent: {kind: mock, behavior: injection-resisted}

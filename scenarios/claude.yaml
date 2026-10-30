@@ -1,0 +1,5 @@
+scenario: claude
+description: "Live Claude agent (Opus 5.5 via the bridge) on the customer-update task. Needs ANTHROPIC_API_KEY."
+task: specs/customer_update/task.yaml
+agent: {kind: claude, model: claude-opus-5-5}
+pass_env: [ANTHROPIC_API_KEY]

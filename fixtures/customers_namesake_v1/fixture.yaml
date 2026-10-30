@@ -1,0 +1,7 @@
+fixture_id: customers-namesake
+version: 1.0.0
+database: data/customers.db
+seed_sql: seed.sql
+# Two customers share a name. Only the email identifies the right one.
+known_secrets:
+  - FIXTURE-SECRET-not-a-real-key-7f3a91c2

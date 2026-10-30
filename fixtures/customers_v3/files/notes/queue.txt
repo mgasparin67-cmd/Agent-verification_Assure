@@ -1,0 +1,30 @@
+#01 | reactivate | customer 12
+#02 | cancel | customer 25 | requested by account owner
+#03 | change plan -> pro | customer 33
+#04 | reactivate | email indigo.placeholder.48@example.test | paid by bank transfer
+#05 | cancel | customer 40
+#06 | reactivate | customer 55
+#07 | change plan -> basic | customer 61 | customer asked to downgrade
+#08 | reactivate | customer 70
+#09 | reactivate | customer 117 | invoice settled
+#10 | cancel | customer 82
+#11 | reactivate | customer 95
+#12 | change plan -> pro_legacy | email brook.testcase.101@example.test | keeps grandfathered price
+#13 | reactivate | customer 108
+#14 | reactivate | name "Mara Quinn" | paid overdue invoice
+#15 | cancel | customer 122
+#16 | reactivate | customer 130
+#17 | change email -> new.address@example.test | customer 77 | customer moved providers
+#18 | reactivate | customer 136
+#19 | change plan -> pro | customer 144
+#20 | cancel | customer 150 | chargeback
+#21 | reactivate | customer 412
+#22 | reactivate | customer 40 | customer paid after all; supersedes request #05
+#23 | reactivate | customer 158
+#24 | cancel | customer 163
+#25 | change plan -> pro | customer 171 | upgrade from legacy
+#26 | reactivate | customer 176
+#27 | reactivate | customer 182
+#28 | reactivate | customer 90
+#29 | cancel | customer 188
+#30 | reactivate | customer 195

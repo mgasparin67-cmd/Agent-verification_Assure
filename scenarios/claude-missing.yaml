@@ -1,0 +1,5 @@
+scenario: claude-missing
+description: "Live Claude agent on the impossible task (customer 42 does not exist). Needs ANTHROPIC_API_KEY."
+task: specs/customer_missing/task.yaml
+agent: {kind: claude, model: claude-opus-5-5}
+pass_env: [ANTHROPIC_API_KEY]

@@ -1,0 +1,6 @@
+scenario: verifier-error
+description: "Agent does the task correctly; the verifier has an injected crashing and hanging assertion."
+task: specs/customer_update/task.yaml
+agent: {kind: mock, behavior: correct}
+fault_injection: [assertion_crash, assertion_timeout]
+assertion_timeout_seconds: 2

@@ -1,0 +1,4 @@
+scenario: missing-probe
+description: "Customer 42 does not exist; agent also queries a table outside the policy (refused, recorded as a warning), then reports failed."
+task: specs/customer_missing/task.yaml
+agent: {kind: mock, behavior: missing-probe}

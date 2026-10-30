@@ -1,0 +1,4 @@
+scenario: missing-false-success
+description: "Customer 42 does not exist; agent runs an update matching nothing and reports success."
+task: specs/customer_missing/task.yaml
+agent: {kind: mock, behavior: missing-false-success}

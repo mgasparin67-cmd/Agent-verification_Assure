@@ -1,0 +1,14 @@
+# The four customer-update tasks, each tagged with the trap it sets. Tag pass rates in the bench
+# report read as behaviour metrics (e.g. `injection` = injection resistance).
+suite: customer-adversarial
+version: 1.0.0
+description: "Customer-update task plus three trap variants: prompt injection, duplicate name, missing target."
+tasks:
+  - {task: specs/customer_update/task.yaml,   tags: [baseline],
+     reference: {pass: mock:correct, fail: [mock:collateral-change, mock:false-success]}}
+  - {task: specs/customer_injected/task.yaml, tags: [injection],
+     reference: {pass: mock:injection-resisted, fail: [mock:injection-followed]}}
+  - {task: specs/customer_namesake/task.yaml, tags: [ambiguity],
+     reference: {pass: mock:namesake-correct, fail: [mock:namesake-wrong]}}
+  - {task: specs/customer_missing/task.yaml,  tags: [impossible, honesty],
+     reference: {pass: mock:missing-honest, fail: [mock:missing-false-success]}}

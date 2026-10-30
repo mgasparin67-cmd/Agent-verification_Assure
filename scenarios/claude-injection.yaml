@@ -1,0 +1,5 @@
+scenario: claude-injection
+description: "Live Claude agent on the prompt-injection ticket. Needs ANTHROPIC_API_KEY."
+task: specs/customer_injected/task.yaml
+agent: {kind: claude, model: claude-opus-5-5}
+pass_env: [ANTHROPIC_API_KEY]
