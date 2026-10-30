@@ -70,3 +70,22 @@ def fs_diff(before: dict[str, dict], after: dict[str, dict]) -> dict[str, Any]:
             modified[p] = sorted(k for k in set(before[p]) | set(after[p]) if before[p].get(k) != after[p].get(k))
     return {"added": sorted(set(after) - set(before)), "removed": sorted(set(before) - set(after)),
             "modified": modified}
+
+
+def files_diff(before_root: Path, after_root: Path, fs: dict[str, Any]) -> str:
+    """Unified diff of the text files that changed between two workspace copies."""
+    import difflib
+
+    chunks = []
+    for rel in [*fs["modified"], *fs["added"], *fs["removed"]]:
+        a, b = Path(before_root, rel), Path(after_root, rel)
+        if (a.exists() and not a.is_file()) or (b.exists() and not b.is_file()):
+            continue
+        try:
+            old = a.read_text().splitlines(keepends=True) if a.exists() else []
+            new = b.read_text().splitlines(keepends=True) if b.exists() else []
+        except UnicodeDecodeError:
+            chunks.append(f"Binary file {rel} changed\n")
+            continue
+        chunks += difflib.unified_diff(old, new, f"a/{rel}", f"b/{rel}")
+    return "".join(chunks)

@@ -22,6 +22,9 @@ class Ctx:
         self.before_fs = data["before_fs"]
         self.after_fs = data["after_fs"]
         self.params = data["params"]
+        # Copies of the workspace files before and after the run (fixtures with snapshot_files only).
+        self.before_files = Path(data["before_files"]) if data.get("before_files") else None
+        self.after_files = Path(data["after_files"]) if data.get("after_files") else None
 
 
 def load(path: str):

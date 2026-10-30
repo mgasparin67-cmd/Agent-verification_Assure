@@ -1,6 +1,6 @@
 [project]
 name = "assure"
-version = "0.2.0"
+version = "0.3.0"
 description = "Independent Assurance Plane: deterministic verification of AI agent runs"
 requires-python = ">=3.11"
 dependencies = ["pydantic>=2.6", "pyyaml>=6"]

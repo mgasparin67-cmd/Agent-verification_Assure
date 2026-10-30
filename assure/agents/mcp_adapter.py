@@ -37,6 +37,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from assure import __version__
 from assure.adapter import GatewayClient
 from assure.agents.common import COMPLETION_TOOL, SYSTEM, completion_problems
 
@@ -111,7 +112,7 @@ def handle_rpc(relay: Relay, msg: dict[str, Any]) -> dict[str, Any] | None:
         requested = params.get("protocolVersion")
         version = requested if requested in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[-1]
         return _rpc_result(mid, {"protocolVersion": version, "capabilities": {"tools": {"listChanged": False}},
-                                 "serverInfo": {"name": SERVER_NAME, "version": "0.2.0"},
+                                 "serverInfo": {"name": SERVER_NAME, "version": __version__},
                                  "instructions": SYSTEM})
     if method == "ping":
         return _rpc_result(mid, {})

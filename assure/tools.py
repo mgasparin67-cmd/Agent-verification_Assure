@@ -294,7 +294,52 @@ class FsWrite(Tool):
         return {"bytes_written": len(a.content.encode())}, {"bytes_written": len(a.content.encode())}
 
 
-REGISTRY: dict[str, Tool] = {t.name: t for t in (DbQuery(), DbUpdate(), FsRead(), FsList(), FsWrite())}
+class TestArgs(Strict):
+    path: str = Field("tests", min_length=1, max_length=512)
+
+
+class RunTests(Tool):
+    """Runs the workspace's pytest suite. This executes code the agent may have written, on the
+    gateway's host, so the orchestrator refuses it in docker mode (it would cross the boundary)."""
+
+    name = "run_tests"
+    args_model = TestArgs
+    description = ("Run the project's tests with pytest: {path?} (a test file or directory, default 'tests'). "
+                   "Returns exit_code, a summary line, and the end of the output.")
+    timeout_seconds = 60
+
+    def plan(self, ws, a: TestArgs, raw):
+        rp = resolve(ws.root, a.path)
+        return PlannedCall(self.name, raw, digest(raw), paths=[(rp, "read")],
+                           resources=[Resource(kind="file", target=rp.relative or a.path, access="read"),
+                                      Resource(kind="tool", target="pytest", access="execute")])
+
+    def execute(self, ws, a, call, max_rows):
+        import importlib.util
+        import subprocess
+        import sys
+
+        if importlib.util.find_spec("pytest") is None:
+            raise ToolInvalid("pytest is not installed where the gateway runs")
+        target = call.paths[0][0].absolute
+        if not target.exists():
+            raise ToolInvalid(f"no such test path: {a.path}")
+        env = {"PATH": "/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "HOME": str(ws.root), "LANG": "C.UTF-8"}
+        try:
+            proc = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", str(target)],
+                                  cwd=ws.root, env=env, capture_output=True, text=True,
+                                  timeout=self.timeout_seconds, start_new_session=True)
+        except subprocess.TimeoutExpired:
+            return ({"exit_code": None, "summary": f"timed out after {self.timeout_seconds}s", "output": ""},
+                    {"exit_code": None, "timed_out": True})
+        out = (proc.stdout + proc.stderr).replace(str(ws.root) + "/", "")
+        lines = [l for l in out.strip().splitlines() if l.strip()]
+        summary = lines[-1] if lines else ""
+        return ({"exit_code": proc.returncode, "summary": summary, "output": out[-6000:]},
+                {"exit_code": proc.returncode, "summary": summary[:200]})
+
+
+REGISTRY: dict[str, Tool] = {t.name: t for t in (DbQuery(), DbUpdate(), FsRead(), FsList(), FsWrite(), RunTests())}
 
 
 def describe_tools(allowed: list[str]) -> list[dict[str, Any]]:

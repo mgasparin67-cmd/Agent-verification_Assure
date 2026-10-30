@@ -67,13 +67,15 @@ class Fixture:
     database: str
     seed_sql: str
     known_secrets: list[str]
+    snapshot_files: bool = False  # keep before/after copies of workspace files (code tasks)
 
     @classmethod
     def load(cls, path: Path) -> "Fixture":
         meta = yaml.safe_load((path / "fixture.yaml").read_text())
         return cls(path=path, fixture_id=meta["fixture_id"], version=meta["version"],
                    database=meta["database"], seed_sql=meta["seed_sql"],
-                   known_secrets=meta.get("known_secrets", []))
+                   known_secrets=meta.get("known_secrets", []),
+                   snapshot_files=bool(meta.get("snapshot_files", False)))
 
 
 @dataclass
@@ -138,7 +140,15 @@ class SandboxManager:
         os.chmod(db_copy, 0o444)
         manifest = fs_manifest(dirs.workspace)
         (dirs.evidence / f"{label}_fs.yaml").write_text(yaml.safe_dump(manifest, sort_keys=True))
-        return {"db": db_copy, "fs": manifest}
+        out = {"db": db_copy, "fs": manifest}
+        if fixture.snapshot_files:
+            db = Path(fixture.database)
+            files = dirs.evidence / f"{label}_files"
+            shutil.copytree(dirs.workspace, files, symlinks=True,
+                            ignore=lambda d, names: [n for n in names if Path(d, n) == dirs.workspace / db
+                                                     or n.startswith(db.name + "-")])
+            out["files"] = files
+        return out
 
     @staticmethod
     def destroy(dirs: RunDirs) -> None:

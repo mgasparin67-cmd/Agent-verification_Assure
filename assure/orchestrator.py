@@ -26,7 +26,7 @@ from .redact import Redactor
 from .report import EXIT_CODES, assertion_findings, dimension_verdicts, overall_verdict
 from .runner import AgentProcess, collect_pass_env, isolation_for, serve
 from .sandbox import Fixture, SandboxManager
-from .snapshot import DbView, db_diff, fs_diff
+from .snapshot import DbView, db_diff, files_diff, fs_diff
 from .tools import Workspace, describe_tools
 from .trajectory import evaluate
 
@@ -133,6 +133,9 @@ def execute_run(*, project: Path, task_path: Path, argv: list[str], runs_dir: Pa
     fixture = Fixture.load((project / task_src.fixture).resolve())
     sandbox = SandboxManager(runs_dir)
 
+    if isolation == "docker" and "run_tests" in load_policy(task_path.parent / task_src.policy).tools.allow:
+        raise ValueError("run_tests executes agent-written code on the gateway's host; "
+                         "it is not available in docker isolation yet")
     if isolation == "docker" and shutil.which("docker") is None:
         raise RuntimeError("docker isolation requested but the docker CLI is not available")
     extra_env = collect_pass_env(list(pass_env))
@@ -240,8 +243,12 @@ def execute_run(*, project: Path, task_path: Path, argv: list[str], runs_dir: Pa
 
     # Trusted deterministic assertions, outside the agent's reach, one subprocess each.
     ctx_file = dirs.evidence / "assertion_ctx.json"
+    if "files" in after:
+        (dirs.evidence / "workspace.diff").write_text(redactor.text(files_diff(before["files"], after["files"], fsd)))
     ctx_file.write_text(json.dumps({"before_db": str(before["db"]), "after_db": str(after["db"]),
-                                    "before_fs": before["fs"], "after_fs": after["fs"], "params": task.params}))
+                                    "before_fs": before["fs"], "after_fs": after["fs"], "params": task.params,
+                                    "before_files": str(before.get("files") or ""),
+                                    "after_files": str(after.get("files") or "")}))
     suites = [dirs.verifier / "assertions.py"] + ([dirs.verifier / "fault_suite.py"] if faults else [])
     timeout = assertion_timeout or task.assertion_timeout_seconds
     if spec_problems:

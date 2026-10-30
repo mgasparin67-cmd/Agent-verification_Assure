@@ -34,4 +34,5 @@ jobs:
       - name: Generated long-task specs are up to date
         run: |
           python specs/long/build.py
-          git diff --exit-code -- fixtures/customers_v3 specs/long
+          python specs/code/build.py
+          git diff --exit-code -- fixtures specs
